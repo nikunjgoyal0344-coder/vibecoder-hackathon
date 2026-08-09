@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import Dashboard from './pages/DashboardPage/DashboardPage';
+import ChallengeDayPage from './pages/ChallengeDayPage/ChallengeDayPage';
 import { 
   Users, 
   Award, 
@@ -125,7 +127,27 @@ const FAQS = [
   }
 ];
 
+// ---- Simple path-based router ----
+function getRoute() {
+  const path = window.location.pathname;
+  if (path.startsWith('/dashboard')) return 'dashboard';
+  if (path.match(/^\/day\/\d+/)) return 'day';
+  return 'landing';
+}
+
 export default function App() {
+  const [route, setRoute] = useState(getRoute());
+
+  useEffect(() => {
+    const onPopState = () => setRoute(getRoute());
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = (path) => {
+    window.history.pushState({}, '', path);
+    setRoute(getRoute());
+  };
   const [theme, setTheme] = useState('dark');
   const [studentCount, setStudentCount] = useState(15248);
   const [recentNotification, setRecentNotification] = useState(null);
@@ -288,6 +310,17 @@ export default function App() {
     setUserSession(null);
   };
 
+  // Route: Dashboard
+  if (route === 'dashboard') {
+    return <Dashboard theme={theme} setTheme={setTheme} user={userSession} onNavigate={navigate} />;
+  }
+
+  // Route: Challenge Day
+  if (route === 'day') {
+    const dayNum = parseInt(window.location.pathname.split('/').pop(), 10);
+    return <ChallengeDayPage dayNumber={dayNum} theme={theme} setTheme={setTheme} user={userSession} onNavigate={navigate} />;
+  }
+
   return (
     <div className="app-container">
       {/* Ambient background glowing blobs */}
@@ -329,6 +362,24 @@ export default function App() {
 
           {/* Right controls - Switch options & Auth */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Dashboard link - shown when logged in */}
+            {userSession && (
+              <button
+                onClick={() => navigate('/dashboard')}
+                style={{
+                  background: 'var(--primary-glow)',
+                  border: '1.5px solid var(--primary)',
+                  borderRadius: '8px',
+                  padding: '6px 14px',
+                  color: 'var(--primary)',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: 700
+                }}
+              >
+                Dashboard
+              </button>
+            )}
             <button 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               style={{
